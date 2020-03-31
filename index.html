@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>股票数据</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="bootstrap/css/bootstrap.min.css">
+    <script data-main="js/main" src="js/require.js"></script>
+
+</head>
+<body>
+    <h3>股票每日数据概览（来自新浪财经）</h3>
+
+    <button type="button" id="refresh" class="btn btn-success pull-right">刷新</button>
+
+
+    <ul id="myTab" class="nav nav-tabs">
+        <li class="active">
+            <a href="#inland" data-toggle="tab">沪深</a>
+        </li>
+        <li><a href="#a50" data-toggle="tab">富时A50期指</a></li>
+        <li><a href="#hk" data-toggle="tab">港股</a></li>
+        <li><a href="#usa" data-toggle="tab">美股</a></li>
+
+    </ul>
+    <div id="myTabContent" class="tab-content">
+        <div class="tab-pane fade in active" id="inland"></div>
+        <div class="tab-pane fade" id="hk"></div>
+        <div class="tab-pane fade" id="usa"></div>
+        <div class="tab-pane fade" id="a50"></div>
+    </div>
+
+    <!-- table 模板 -->
+    <div id="table-tpl" class="hidden">
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>日期</th>
+                    <th>指数名称</th>
+                    <th>点数</th>
+                    <th>涨跌幅</th>
+                    <th>成交量</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        require(["jquery", "helper", "bootstrap"], function($, Helper){
+            $('#refresh').on('click', function(){
+               $.get('data.php', {}, function(data){
+                   var $tpl = $('#table-tpl');
+
+                   function forIn(data, callback) {
+                       for(var i in data) {
+                           callback(i, data[i]);
+                       }
+                   };
+
+                   forIn(data.data, function(tabId, items){
+                       var $tabId = $('#'+tabId);
+                       $tabId.empty().html($tpl.html());
+
+                       var rows = '';
+                       forIn(data.data[tabId], function(i, val){
+                           var clazz = val.ratio - 0 < 0 ? 'success' : 'danger';
+                           var percent = Math.abs(10 * val.ratio);
+                           rows += `
+                            <tr>
+                                <td>${data.date}</td>
+                                <td>${val.name}</td>
+                                <td>${val.end_point}</td>
+                                <!--<td class="${clazz}">${val.ratio}</td>-->
+                                <td>
+                                    <div class="progress">
+                                        <div class="progress-bar progress-bar-${clazz}" role="progressbar" aria-valuenow="${percent}" aria-valuemin="0" aria-valuemax="100" style="width: ${percent}%;">
+                                            <span class="sr-only">${val.ratio}</span>
+
+                                        </div><span class="text-primary">${val.ratio}%</span>
+                                    </div>
+                                </td>
+                                <td>${val.volume}</td>
+                            </tr>
+                        `;
+                       });
+
+                       $tabId.find('tbody').append(rows);
+                   });
+               }, 'json');
+            }).trigger('click');
+        });
+
+    </script>
+</body>
+</html>
